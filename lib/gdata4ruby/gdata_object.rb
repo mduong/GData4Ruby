@@ -154,7 +154,7 @@ module GData4Ruby
       else
         ret = create
       end
-      if not ret or not load(ret.read_body)
+      if not ret or not load(ret)
         raise SaveFailed, 'Could not save object'
       end
       return true
@@ -170,7 +170,7 @@ module GData4Ruby
     #Deletes the object.
     def delete
       if @exists
-        service.send_request(Request.new(:delete, @edit_uri, nil, {"If-Match" => "*"}))
+        service.send_request(Request.new(:delete, @edit_uri, '', {"If-Match" => "*"}))
       end
       @exists = false
       return true

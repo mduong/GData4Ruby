@@ -1,7 +1,7 @@
 version = File.read(File.expand_path("../VERSION", __FILE__)).strip
 
 Gem::Specification.new do |s|
-  s.name = 'gdata4ruby'
+  s.name = 'intouch-gdata4ruby'
   s.version = version
   s.summary = "A full featured wrapper for interacting with the base Google Data API"
   s.description = "A full featured wrapper for interacting with the base Google Data API, including authentication and basic object handling"
@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
     "lib/gdata4ruby.rb",
     "lib/gdata4ruby/base.rb",
     "lib/gdata4ruby/service.rb",
+    "lib/gdata4ruby/oauth_service.rb",
     "lib/gdata4ruby/request.rb",
     "lib/gdata4ruby/gdata_object.rb",
     "lib/gdata4ruby/utils/utils.rb",
@@ -26,4 +27,5 @@ Gem::Specification.new do |s|
   s.test_files = [
     'test/unit.rb'
   ] 
+  s.add_dependency('oauth2', '>= 0.4.1')
 end 

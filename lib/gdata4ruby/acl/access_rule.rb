@@ -53,7 +53,7 @@ module GData4Ruby
       #Creates the AccessRule using the parent's acl_uri attribute.
       def create
         ret = service.send_request(Request.new(:post, @parent.acl_uri, to_xml))
-        if not ret or not load(ret.read_body)
+        if not ret or not load(ret)
           raise SaveFailed, 'Could not create access rule'
         end
         return ret
@@ -93,7 +93,7 @@ module GData4Ruby
         raise ArgumentError, 'Must supply a username or role to find by' if not args[:user] and not args[:role]
         rules = []
         ret = service.send_request(GData4Ruby::Request.new(:get, parent.acl_uri))
-        xml = REXML::Document.new(ret.read_body).root
+        xml = REXML::Document.new(ret).root
         xml.elements.each("entry") do |e|
           e = GData4Ruby::Utils::add_namespaces(e)
           rule = AccessRule.new(service, parent)

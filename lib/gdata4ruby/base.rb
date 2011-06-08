@@ -80,11 +80,29 @@ module GData4Ruby
     
     #The GData version used by the service
     attr_accessor :gdata_version
+    
+    # Will have the service use https instead of http
+    attr_accessor :use_ssl
 
     #Optionally, pass a hash of attributes to populate the class.  If you want to use a GData version
     #other than the default (2.1), pass a key/value pair, i.e. {:gdata_version => '1.0'}      
     def initialize(attributes = {})
+      attributes.each do |key, value|
+        if self.respond_to?("#{key}=")
+          self.send("#{key}=", value)
+        end
+      end
       @gdata_version = attributes[:gdata_version] ? attributes[:gdata_version] : '2.1'
+      @use_ssl ||= false
+      @debug ||= false
+    end
+    
+    def log(string)
+      puts string if self.debug
+    end
+    
+    def create_url(path)
+      return http_protocol + path
     end
     
     #Sends a request to the Google Data System.  Accepts a valid Request object, and returns a 
@@ -96,10 +114,30 @@ module GData4Ruby
     end
 
     private
+    
+    def set_protocol!(request)
+      uri = request.url
+      if uri.scheme != protocol
+        request.url = URI.parse(uri.to_s.sub(uri.scheme, protocol))
+        # values = uri.select(*uri.component)
+        #         keys = uri.component
+        #         components_hash = {}
+        #         # Build a hash where the keys are from keys[] and values are from values[]
+        #         keys.zip(values) {|a,b| components_hash[a] = b }
+        #         components_hash[:scheme] = protocol
+        #         request.url = case protocol
+        #         when 'https'
+        #           URI::HTTPS.build(components_hash)
+        #         when 'http'
+        #           URI::HTTP.build(components_hash)
+        #         end
+      end
+    end
 
     def do_request(request)
       ret = nil
       add_auth_header(request)
+      set_protocol!(request)
       # Add the session cookie if available
       request.headers.merge!({'Cookie' => @session_cookie}) if @session_cookie
       http = get_http_object(request.url)
@@ -118,10 +156,10 @@ module GData4Ruby
       end
 
       if @debug
-        puts "Response code: #{ret.code}"
+        puts "Response code: #{ret.status}"
         puts "Headers: \n"
-        ret.each { |h, v| puts "#{h}:#{v}" }
-        puts "Body: \n" + ret.read_body
+        ret.headers.each { |h, v| puts "#{h}:#{v}" }
+        puts "Body: \n" + ret
       end
 
       # Save the session cookie if set
@@ -130,16 +168,9 @@ module GData4Ruby
         @session_cookie = cookie if cookie =~ /^S=.+/
       end
 
-      while ret.is_a?(Net::HTTPRedirection)
-        puts "Redirect received, resending request" if @debug
-        request.parameters = nil
-        request.url = ret['location']
-        puts "sending #{request.type} to url = #{request.url.to_s}" if @debug
-        ret = do_request(request)
-      end
-      if not ret.is_a?(Net::HTTPSuccess)
-        puts "invalid response received: "+ret.code if @debug
-        raise HTTPRequestFailed, ret.body
+      if not ret.status == 200...201
+        puts "invalid response received: "+ret.status if @debug
+        raise HTTPRequestFailed, ret
       end
       return ret
     end
@@ -168,6 +199,20 @@ module GData4Ruby
           request.headers = {'Authorization' => "GoogleLogin auth=#{@auth_token}", "GData-Version" => @gdata_version, 'Content-Type' => content_type}
         end
       end
+    end
+    
+    protected
+    
+    def protocol
+      ssl_suffix = ""
+      ssl_suffix = "s" if use_ssl
+      return "http#{ssl_suffix}"
+    end
+    
+    def http_protocol
+      ssl_suffix = ""
+      ssl_suffix = "s" if use_ssl
+      return "http#{ssl_suffix}://"
     end
   end
 end

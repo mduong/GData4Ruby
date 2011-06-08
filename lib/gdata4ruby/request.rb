@@ -33,7 +33,7 @@ module GData4Ruby
     attr_reader :parameters
     
     #Creates a new request object.
-    def initialize(type, url, content = nil, headers = nil, query_parameters = nil)
+    def initialize(type, url, content = '', headers = {}, query_parameters = {})
       @parameters = nil
       @headers = headers
       @content = content
